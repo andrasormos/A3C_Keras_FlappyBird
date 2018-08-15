@@ -47,12 +47,12 @@ lrate = 0
 
 # Loss function for policy output
 def logloss(y_true, y_pred):     #policy loss
-	return -K.sum( K.log(y_true*y_pred + (1-y_true)*(1-y_pred) + const), axis=-1)
-	# BETA * K.sum(y_pred * K.log(y_pred + const) + (1-y_pred) * K.log(1-y_pred + const))   #regularisation term
+    return -K.sum( K.log(y_true*y_pred + (1-y_true)*(1-y_pred) + const), axis=-1)
+    # BETA * K.sum(y_pred * K.log(y_pred + const) + (1-y_pred) * K.log(1-y_pred + const))   #regularisation term
 
 # Loss function for critic output
 def sumofsquares(y_true, y_pred):        #critic loss
-	return K.sum(K.square(y_pred - y_true), axis=-1)
+    return K.sum(K.square(y_pred - y_true), axis=-1)
 
 # Function buildmodel() to define the structure of the neural network in use
 def buildmodel():
@@ -64,14 +64,10 @@ def buildmodel():
 	S = Input(shape = (IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS, ), name = 'Input')
 	h0 = Convolution2D(16, kernel_size = (8,8), strides = (4,4), activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform')(S)
 	h1 = Convolution2D(32, kernel_size = (4,4), strides = (2,2), activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform')(h0)
-	#h1 = Convolution2D(32, kernel_size = (4,4), strides = (2,2), activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer='random_uniform')(h0)
-
 	h2 = Flatten()(h1)
 	h3 = Dense(256, activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h2)
-	h4 = Dense(512, activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h3)
-	h5 = Dense(1024, activation='relu', kernel_initializer='random_uniform', bias_initializer='random_uniform')(h4)
-	P = Dense(1, name = 'o_P', activation = 'sigmoid', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h5)
-	V = Dense(1, name = 'o_V', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h5)
+	P = Dense(1, name = 'o_P', activation = 'sigmoid', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h3)
+	V = Dense(1, name = 'o_V', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h3)
 
 	model = Model(inputs = S, outputs = [P,V])
 	rms = RMSprop(lr = LEARNING_RATE, rho = 0.99, epsilon = 0.1)
@@ -80,16 +76,13 @@ def buildmodel():
 
 # Function to preprocess an image before giving as input to the neural network
 def preprocess(image):
-	image = skimage.color.rgb2gray(image)
-	image = skimage.transform.resize(image, (IMAGE_ROWS, IMAGE_COLS), mode = 'constant')
-	image = skimage.exposure.rescale_intensity(image, out_range=(0,255))
-
-	image = exposure.rescale_intensity(image, in_range=(1, 2))
-	image = skimage.exposure.rescale_intensity(image, out_range=(0, 255))
-
-
-	image = image.reshape(1, image.shape[0], image.shape[1], 1)
-	return image
+    image = skimage.color.rgb2gray(image)
+    image = skimage.transform.resize(image, (IMAGE_ROWS, IMAGE_COLS), mode = 'constant')
+    image = skimage.exposure.rescale_intensity(image, out_range=(0,255))
+    image = exposure.rescale_intensity(image, in_range=(1, 2))
+    image = skimage.exposure.rescale_intensity(image, out_range=(0, 255))
+    image = image.reshape(1, image.shape[0], image.shape[1], 1)
+    return image
 
 # Initialize a new model using buildmodel() or use load_model to resume training an already trained model
 model = buildmodel()
@@ -105,7 +98,7 @@ a_t[0] = 1 # Index 0 = no flap, 1 = flap
 
 game_state = []
 for i in range(0,THREADS):
-	game_state.append(game.GameState(30000))
+    game_state.append(game.GameState(30000))
 
 
 myCount = 0
@@ -117,165 +110,163 @@ score = 0
 
 
 def runprocess(thread_id, s_t):
-	global T
-	global a_t
-	global model
-	global myCount
-	global score
-	global logCnt
-	global trainingLog
+    global T
+    global a_t
+    global model
+    global myCount
+    global score
+    global logCnt
+    global trainingLog
 
-	t = 0
-	t_start = t
-	terminal = False
-	r_t = 0
-	r_store = []
-	state_store = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS))
-	output_store = []
-	critic_store = []
-	s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])
+    t = 0
+    t_start = t
+    terminal = False
+    r_t = 0
+    r_store = []
+    state_store = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS))
+    output_store = []
+    critic_store = []
+    s_t = s_t.reshape(1, s_t.shape[0], s_t.shape[1], s_t.shape[2])
 
-	while t-t_start < t_max and terminal == False:
-		t += 1
-		T += 1
-		intermediate_output = 0
+    while t-t_start < t_max and terminal == False:
+        t += 1
+        T += 1
+        intermediate_output = 0
 
-		with graph.as_default():
-			predictedChoice = model.predict(s_t)[0]
-			intermediate_output = intermediate_layer_model.predict(s_t)
+        with graph.as_default():
+            predictedChoice = model.predict(s_t)[0]
+            intermediate_output = intermediate_layer_model.predict(s_t)
 
-		randomChoice = np.random.rand()
+        randomChoice = np.random.rand()
+        print("randomChoice:", randomChoice)
 
-		a_t = [0, 1] if randomChoice < predictedChoice else [1, 0]  # stochastic action
-		print("rand=", randomChoice, "pred=", predictedChoice, "a_t=", a_t)
+        a_t = [0, 1] if randomChoice < predictedChoice else [1, 0]  # stochastic action
 
+        # a_t = [0,1] if 0.5 < y[0] else [1,0]  # deterministic action
+        # x_t (next frame), r_t (0.1 if alive, +1.5 if it passes the pipe, -1 if it dies) and the input is a_t (action)
+        x_t, r_t, terminal = game_state[thread_id].frame_step(a_t)
+        x_t = preprocess(x_t)
 
-		# a_t = [0,1] if 0.5 < y[0] else [1,0]  # deterministic action
-		# x_t (next frame), r_t (0.1 if alive, +1.5 if it passes the pipe, -1 if it dies) and the input is a_t (action)
-		x_t, r_t, terminal = game_state[thread_id].frame_step(a_t)
-		x_t = preprocess(x_t)
+        # TRAIN LOG
+        #trainingLog.loc[logCnt] = lrate
+        #logCnt += 1
 
-		# TRAIN LOG
-		#trainingLog.loc[logCnt] = lrate
-		#logCnt += 1
+        #if logCnt % 10 == 0:
+            #trainingLog.to_csv("trainingLog.csv", index=True)
 
-		#if logCnt % 10 == 0:
-			#trainingLog.to_csv("trainingLog.csv", index=True)
+        myCount += 1
 
-		myCount += 1
+        with graph.as_default():
+            critic_reward = model.predict(s_t)[1]
 
-		with graph.as_default():
-			critic_reward = model.predict(s_t)[1]
+        y = 0 if a_t[0] == 1 else 1
 
-		y = 0 if a_t[0] == 1 else 1
+        r_store = np.append(r_store, r_t)
+        state_store = np.append(state_store, s_t, axis = 0)
+        output_store = np.append(output_store, y)
+        critic_store = np.append(critic_store, critic_reward)
 
-		r_store = np.append(r_store, r_t)
-		state_store = np.append(state_store, s_t, axis = 0)
-		output_store = np.append(output_store, y)
-		critic_store = np.append(critic_store, critic_reward)
+        s_t = np.append(x_t, s_t[:, :, :, :3], axis=3)
+        print("Frame = " + str(T) + ", Updates = " + str(EPISODE) + ", Thread = " + str(thread_id) + ", Output = "+ str(intermediate_output))
 
-		s_t = np.append(x_t, s_t[:, :, :, :3], axis=3)
-		print("Frame = " + str(T) + ", Updates = " + str(EPISODE) + ", Thread = " + str(thread_id) + ", Output = "+ str(intermediate_output))
+    if terminal == False:
+        r_store[len(r_store)-1] = critic_store[len(r_store)-1]
+    else:
+        r_store[len(r_store)-1] = -1
+        s_t = np.concatenate((x_t, x_t, x_t, x_t), axis=3)
 
-	if terminal == False:
-		r_store[len(r_store)-1] = critic_store[len(r_store)-1]
-	else:
-		r_store[len(r_store)-1] = -1
-		s_t = np.concatenate((x_t, x_t, x_t, x_t), axis=3)
+    for i in range(2,len(r_store)+1):
+        r_store[len(r_store)-i] = r_store[len(r_store)-i] + GAMMA*r_store[len(r_store)-i + 1]
 
-	for i in range(2,len(r_store)+1):
-		r_store[len(r_store)-i] = r_store[len(r_store)-i] + GAMMA*r_store[len(r_store)-i + 1]
-
-	return s_t, state_store, output_store, r_store, critic_store
+    return s_t, state_store, output_store, r_store, critic_store
 
 #function to decrease the learning rate after every epoch. In this manner, the learning rate reaches 0, by 20,000 epochs
 def step_decay(epoch):
-	#print("STEP DECAY BEINGUSED----------->")
-	global lrate
-	decay = 3.2e-8
-	lrate = LEARNING_RATE - epoch*decay
-	lrate = max(lrate, 0)
-	return lrate
+    #print("STEP DECAY BEINGUSED----------->")
+    global lrate
+    decay = 3.2e-8
+    lrate = LEARNING_RATE - epoch*decay
+    lrate = max(lrate, 0)
+    return lrate
 
 class actorthread(threading.Thread):
-	def __init__(self,thread_id, s_t):
-		threading.Thread.__init__(self)
-		self.thread_id = thread_id
-		self.next_state = s_t
+    def __init__(self,thread_id, s_t):
+        threading.Thread.__init__(self)
+        self.thread_id = thread_id
+        self.next_state = s_t
 
-	def run(self):
-		global episode_output
-		global episode_r
-		global episode_critic
-		global episode_state
+    def run(self):
+        global episode_output
+        global episode_r
+        global episode_critic
+        global episode_state
 
-		threadLock.acquire()
-		self.next_state, state_store, output_store, r_store, critic_store = runprocess(self.thread_id, self.next_state)
-		self.next_state = self.next_state.reshape(self.next_state.shape[1], self.next_state.shape[2], self.next_state.shape[3])
+        threadLock.acquire()
+        self.next_state, state_store, output_store, r_store, critic_store = runprocess(self.thread_id, self.next_state)
+        self.next_state = self.next_state.reshape(self.next_state.shape[1], self.next_state.shape[2], self.next_state.shape[3])
 
-		episode_r = np.append(episode_r, r_store)
-		episode_output = np.append(episode_output, output_store)
-		episode_state = np.append(episode_state, state_store, axis = 0)
-		episode_critic = np.append(episode_critic, critic_store)
+        episode_r = np.append(episode_r, r_store)
+        episode_output = np.append(episode_output, output_store)
+        episode_state = np.append(episode_state, state_store, axis = 0)
+        episode_critic = np.append(episode_critic, critic_store)
 
-		threadLock.release()
+        threadLock.release()
 
 states = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, 4))
 
 #initializing state of each thread
 for i in range(0, len(game_state)):
-	image = game_state[i].getCurrentFrame()
-	image = preprocess(image)
-	state = np.concatenate((image, image, image, image), axis=3)
-	states = np.append(states, state, axis = 0)
+    image = game_state[i].getCurrentFrame()
+    image = preprocess(image)
+    state = np.concatenate((image, image, image, image), axis=3)
+    states = np.append(states, state, axis = 0)
 
 cnt = 0
-df = pd.DataFrame(columns=['update', 'reward_mean', 'loss', "lrate"])
+df = pd.DataFrame(columns=['reward_mean', "lrate", 'loss', 'policy_loss', 'critic_loss'])
 
 while True:
-	threadLock = threading.Lock()
-	threads = []
-	for i in range(0,THREADS):
-		threads.append(actorthread(i,states[i]))
+    threadLock = threading.Lock()
+    threads = []
+    for i in range(0,THREADS):
+        threads.append(actorthread(i,states[i]))
 
-	states = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, 4))
+    states = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, 4))
 
-	for i in range(0,THREADS):
-		threads[i].start()
+    for i in range(0,THREADS):
+        threads[i].start()
 
-	#thread.join() ensures that all threads fininsh execution before proceeding further
-	for i in range(0,THREADS):
-		threads[i].join()
+    #thread.join() ensures that all threads fininsh execution before proceeding further
+    for i in range(0,THREADS):
+        threads[i].join()
 
-	for i in range(0,THREADS):
-		state = threads[i].next_state
-		state = state.reshape(1, state.shape[0], state.shape[1], state.shape[2])
-		states = np.append(states, state, axis = 0)
+    for i in range(0,THREADS):
+        state = threads[i].next_state
+        state = state.reshape(1, state.shape[0], state.shape[1], state.shape[2])
+        states = np.append(states, state, axis = 0)
 
-	e_mean = np.mean(episode_r)
-	#advantage calculation for each action taken
-	advantage = episode_r - episode_critic
-	print("backpropagating")
+    e_mean = np.mean(episode_r)
+    #advantage calculation for each action taken
+    advantage = episode_r - episode_critic
+    print("backpropagating")
 
-	lrate = LearningRateScheduler(step_decay)
-	callbacks_list = [lrate]
+    lrate = LearningRateScheduler(step_decay)
+    callbacks_list = [lrate]
 
-	weights = {'o_P':advantage, 'o_V':np.ones(len(advantage))}
-	#backpropagation
-	history = model.fit(episode_state, [episode_output, episode_r], epochs = EPISODE + 1, batch_size = len(episode_output), callbacks = callbacks_list, sample_weight = weights, initial_epoch = EPISODE)
+    weights = {'o_P':advantage, 'o_V':np.ones(len(advantage))}
+    #backpropagation
+    history = model.fit(episode_state, [episode_output, episode_r], epochs = EPISODE + 1, batch_size = len(episode_output), callbacks = callbacks_list, sample_weight = weights, initial_epoch = EPISODE)
 
-	episode_r = []
-	episode_output = []
-	episode_state = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS))
-	episode_critic = []
+    episode_r = []
+    episode_output = []
+    episode_state = np.zeros((0, IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS))
+    episode_critic = []
 
-	# LOG SAVER
-	print("LRATE-------------->", lrate)
-	df.loc[cnt] = EPISODE, e_mean, history.history['loss'],lrate
-	cnt += 1
-	if cnt % 1 == 0:
-		df.to_csv("trainingLog.csv", index=True)
+    # LOG SAVER
+    df.loc[cnt] = e_mean, lrate, history.history['loss'], history.history['o_P_loss'], history.history['o_V_loss']
+    cnt += 1
+    if cnt % 1 == 0:
+        df.to_csv("trainingLog.csv", index=True)
 
-	if EPISODE % 50 == 0:
-		model.save("saved_models/model_updates" +	str(EPISODE))
-	EPISODE += 1
+    if EPISODE % 50 == 0:
+        model.save("saved_models/model_updates" +	str(EPISODE))
+    EPISODE += 1

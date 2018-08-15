@@ -23,13 +23,19 @@ import pandas as pd
 import GameEngine as game
 
 # TO DO
-# Graph epsilon not lrate, you confused the two
+
+#
 # Make image range from 0 to 1 instead from 0 to 255
-# Connected graph points
+# Visualize weights
+# try adding more layers
+# in random actions it should buy less often
+# Connected graph points for better clarity for cnn
+#
+
 
 # ---------------------------------     LOG RELATED     ---------------------------------
 myCount = 0
-trainingLog = pd.DataFrame(columns=["reward", "profit", "action"])
+playLog = pd.DataFrame(columns=["reward", "profit", "action"])
 logCnt = 0
 score = 0
 actionList = []
@@ -58,11 +64,13 @@ lrate = 0
 
 # ---------------------------------     LOSS FUNCTION FOR POLICY OUTPUT      ---------------------------------
 def logloss(y_true, y_pred):     # Policy loss
+    print("logloss:--------------------------------")
     return -K.sum( K.log(y_true*y_pred + (1-y_true)*(1-y_pred) + const), axis=-1)
     # BETA * K.sum(y_pred * K.log(y_pred + const) + (1-y_pred) * K.log(1-y_pred + const))   # regularisation term
 
 # ---------------------------------     LOSS FUNCTION FOR CRITIC OUTPUT      ---------------------------------
 def sumofsquares(y_true, y_pred):        #critic loss
+    print("sumofsquares:--------------------------------")
     return K.sum(K.square(y_pred - y_true), axis=-1)
 
 # ---------------------------------    BUILD MODEL    ---------------------------------
@@ -74,10 +82,12 @@ def buildmodel():
     S = Input(shape = (IMAGE_ROWS, IMAGE_COLS, IMAGE_CHANNELS, ), name = 'Input')
     h0 = Convolution2D(16, kernel_size = (8,8), strides = (4,4), activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform')(S)
     h1 = Convolution2D(32, kernel_size = (4,4), strides = (2,2), activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform')(h0)
+
     h2 = Flatten()(h1)
     h3 = Dense(256, activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h2)
-    h4 = Dense(512, activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h3)
-    h5 = Dense(1024, activation='relu', kernel_initializer='random_uniform', bias_initializer='random_uniform')(h4)
+    h4 = Dense(256, activation = 'relu', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h3)
+    h5 = Dense(512, activation='relu', kernel_initializer='random_uniform', bias_initializer='random_uniform')(h4)
+
     P = Dense(1, name = 'o_P', activation = 'sigmoid', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h5)
     V = Dense(1, name = 'o_V', kernel_initializer = 'random_uniform', bias_initializer = 'random_uniform') (h5)
 
@@ -116,7 +126,7 @@ def runprocess(thread_id, s_t):
     global myCount
     global score
     global logCnt
-    global trainingLog
+    global playLog
     global actionList
 
     t = 0
@@ -161,10 +171,10 @@ def runprocess(thread_id, s_t):
 
                 meanAction = np.mean(actionList)
 
-                trainingLog.loc[logCnt] = score, profit, meanAction
+                playLog.loc[logCnt] = score, profit, meanAction
                 logCnt += 1
 
-                trainingLog.to_csv("playLog.csv", index=True)
+                playLog.to_csv("playLog.csv", index=True)
                 score = 0
                 actionList = []
 
@@ -258,7 +268,7 @@ for i in range(0, len(game_state)):
     states = np.append(states, state, axis = 0)
 
 cnt = 0
-df = pd.DataFrame(columns=['update', 'reward_mean', 'loss', "lrate"])
+trainingLog = pd.DataFrame(columns=['update', 'reward_mean', 'loss', "lrate"])
 
 while True:
     threadLock = threading.Lock()
@@ -298,11 +308,10 @@ while True:
     episode_critic = []
 
     # LOG SAVER
-    print("LRATE-------------->", lrate)
-    df.loc[cnt] = EPISODE, e_mean, history.history['loss'],lrate
+    trainingLog.loc[cnt] = EPISODE, e_mean, history.history['loss'],lrate
     cnt += 1
     if cnt % 1 == 0:
-        df.to_csv("trainingLog.csv", index=True)
+        trainingLog.to_csv("trainingLog.csv", index=True)
 
     if EPISODE % 50 == 0:
         model.save("saved_models/model_updates" +	str(EPISODE))

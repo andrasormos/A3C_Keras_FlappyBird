@@ -7,6 +7,16 @@ import matplotlib.dates as mdates
 import GameEngine as game
 import csv
 
+
+FINAL_EPSILON = 0.0001 # final value of epsilon
+INITIAL_EPSILON = 0.1 # starting value of epsilon
+
+if random.random() <= epsilon:
+    print("----------Random Action----------")
+    action_index = random.randrange(ACTIONS)
+    a_t[action_index] = 1
+
+
 THREADS = 1
 
 game_state = []
